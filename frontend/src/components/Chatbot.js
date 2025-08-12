@@ -8,6 +8,7 @@ const Chatbot = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId] = useState(uuidv4());
+  const [aiStatus, setAiStatus] = useState('checking'); // 'checking', 'available', 'fallback'
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -17,6 +18,30 @@ const Chatbot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Check AI status when component mounts
+  useEffect(() => {
+    checkAIStatus();
+  }, []);
+
+  const checkAIStatus = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/chat/test');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.test_result.status === 'success') {
+          setAiStatus('available');
+        } else {
+          setAiStatus('fallback');
+        }
+      } else {
+        setAiStatus('fallback');
+      }
+    } catch (error) {
+      console.error('Error checking AI status:', error);
+      setAiStatus('fallback');
+    }
+  };
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
@@ -103,7 +128,16 @@ const Chatbot = () => {
               <span className="chatbot-avatar">AI</span>
               <div>
                 <h3>AI Pizza Assistant</h3>
-                <span className="chatbot-status">Online</span>
+                <span className={`chatbot-status ${aiStatus === 'available' ? 'ai-available' : aiStatus === 'fallback' ? 'ai-fallback' : 'ai-checking'}`}>
+                  {aiStatus === 'available' ? '🤖 AI Powered' : 
+                   aiStatus === 'fallback' ? '📝 Basic Mode' : 
+                   '⏳ Checking...'}
+                </span>
+                {aiStatus === 'fallback' && (
+                  <span className="fallback-notice">
+                    Using enhanced rule-based responses
+                  </span>
+                )}
               </div>
             </div>
             <div className="chatbot-controls">

@@ -107,6 +107,23 @@ def clear_chat_history(session_id):
         logger.error(f"Clear history error: {str(e)}")
         return jsonify({'error': 'Failed to clear chat history'}), 500
 
+@chat_bp.route('/test', methods=['GET'])
+def test_ai_model():
+    """Test the AI model to ensure it's working properly"""
+    try:
+        ai_service = get_ai_service()
+        if not ai_service:
+            return jsonify({'error': 'AI service unavailable'}), 503
+        
+        test_result = ai_service.test_ai_model()
+        return jsonify({
+            'test_result': test_result,
+            'timestamp': ai_service._get_timestamp()
+        })
+    except Exception as e:
+        logger.error(f"AI model test error: {str(e)}")
+        return jsonify({'error': 'Failed to test AI model'}), 500
+
 @chat_bp.route('/stats', methods=['GET'])
 def get_chat_stats():
     """Get chatbot usage statistics"""
