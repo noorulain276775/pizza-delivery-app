@@ -1,153 +1,118 @@
 """
-Flask application factory for the Pizza Delivery API
+Flask application factory for Pizza Delivery API
 """
-from flask import Flask
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
 from .database import db
-from .routes.pizza_routes import pizza_bp
-from .routes.order_routes import order_bp
-import logging
-import os
-from logging.handlers import RotatingFileHandler
+from config import config
 
-def create_app(config_name=None):
-    """
-    Application factory pattern
-    
-    Args:
-        config_name: Configuration name (development, production, testing)
-        
-    Returns:
-        Flask application instance
-    """
+def create_limiter():
+    """Create and configure rate limiter"""
+    return Limiter(
+        key_func=get_remote_address,
+        default_limits=["200 per day", "50 per hour"]
+    )
+
+def create_app(config_name='development'):
     app = Flask(__name__)
     
     # Load configuration
-    if config_name is None:
-        config_name = os.environ.get('FLASK_ENV', 'development')
-    
-    from config import config
-    app.config.from_object(config[config_name])
+    config_obj = config[config_name]()
+    for key in dir(config_obj):
+        if not key.startswith('_') and not callable(getattr(config_obj, key)):
+            app.config[key] = getattr(config_obj, key)
     
     # Initialize extensions
     db.init_app(app)
     Migrate(app, db)
     
-    # Configure CORS
-    CORS(app, origins=app.config.get('CORS_ORIGINS', ['http://localhost:3000']))
+    # Create and initialize rate limiter with app
+    limiter = create_limiter()
+    limiter.init_app(app)
     
-    # Security headers
+    # Configure CORS
+    CORS(app, resources={r"/api/*": {"origins": app.config.get('CORS_ORIGINS')}})
+    
+    # Import routes after limiter is initialized to avoid circular imports
+    from .routes.pizza_routes import pizza_bp
+    from .routes.order_routes import order_bp
+    from .routes.chat_routes import chat_bp
+    
+    # Register blueprints
+    app.register_blueprint(pizza_bp, url_prefix='/api/pizzas')
+    app.register_blueprint(order_bp, url_prefix='/api/orders')
+    app.register_blueprint(chat_bp, url_prefix='/api/chat')
+    
+    # Register error handlers
+    register_error_handlers(app)
+    
+    # Add security headers
     @app.after_request
     def add_security_headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        
+        # Dynamic CSP based on environment
+        if app.config.get('FLASK_ENV') == 'production':
+            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';"
+        else:
+            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://127.0.0.1:5000;"
+        
         return response
-    
-    # Configure logging
-    if not app.debug and not app.testing:
-        configure_logging(app)
-    
-    # Register blueprints
-    app.register_blueprint(pizza_bp, url_prefix='/api/pizzas')
-    app.register_blueprint(order_bp, url_prefix='/api/orders')
-    
-    # Register error handlers
-    register_error_handlers(app)
     
     # Health check endpoint
     @app.route('/health')
-    def health_check():
-        """Health check endpoint for monitoring"""
-        return {'status': 'healthy', 'service': 'pizza-delivery-api'}, 200
+    def health():
+        return jsonify({
+            'status': 'healthy',
+            'service': 'pizza-delivery-api',
+            'timestamp': app.config.get('TIMESTAMP', 'N/A'),
+            'environment': app.config.get('FLASK_ENV', 'development')
+        })
     
-    # Serve static files
-    @app.route('/static/<path:filename>')
-    def static_files(filename):
-        """Serve static files from the static directory"""
-        return app.send_static_file(filename)
+    # Configure logging
+    configure_logging(app)
     
     return app
 
-def configure_logging(app):
-    """Configure application logging"""
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
-    
-    # File handler for production logging
-    file_handler = RotatingFileHandler(
-        'logs/pizza_delivery.log', 
-        maxBytes=10240000, 
-        backupCount=10
-    )
-    
-    # Format for log messages
-    formatter = logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-    )
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(logging.INFO)
-    
-    # Console handler for development
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(formatter)
-    
-    # Configure app logger
-    app.logger.addHandler(file_handler)
-    app.logger.addHandler(console_handler)
-    app.logger.setLevel(logging.INFO)
-    
-    app.logger.info('Pizza Delivery API startup')
-
 def register_error_handlers(app):
-    """Register global error handlers"""
-    
     @app.errorhandler(400)
     def bad_request(error):
-        """Handle bad request errors"""
-        return {
-            'error': 'Bad request',
-            'code': 'BAD_REQUEST',
-            'message': 'The request could not be processed'
-        }, 400
+        return jsonify({'error': 'Bad Request', 'message': str(error)}), 400
     
     @app.errorhandler(404)
     def not_found(error):
-        """Handle not found errors"""
-        return {
-            'error': 'Not found',
-            'code': 'NOT_FOUND',
-            'message': 'The requested resource was not found'
-        }, 404
-    
-    @app.errorhandler(405)
-    def method_not_allowed(error):
-        """Handle method not allowed errors"""
-        return {
-            'error': 'Method not allowed',
-            'code': 'METHOD_NOT_ALLOWED',
-            'message': 'The HTTP method is not allowed for this endpoint'
-        }, 405
+        return jsonify({'error': 'Not Found', 'message': 'Resource not found'}), 404
     
     @app.errorhandler(500)
     def internal_error(error):
-        """Handle internal server errors"""
-        app.logger.error(f'Internal server error: {error}')
-        return {
-            'error': 'Internal server error',
-            'code': 'INTERNAL_ERROR',
-            'message': 'An unexpected error occurred'
-        }, 500
+        return jsonify({'error': 'Internal Server Error', 'message': 'Something went wrong'}), 500
     
-    @app.errorhandler(Exception)
-    def handle_exception(error):
-        """Handle all unhandled exceptions"""
-        app.logger.error(f'Unhandled exception: {error}', exc_info=True)
-        return {
-            'error': 'Internal server error',
-            'code': 'INTERNAL_ERROR',
-            'message': 'An unexpected error occurred'
-        }, 500
+    @app.errorhandler(413)
+    def payload_too_large(error):
+        return jsonify({'error': 'Payload Too Large', 'message': 'Request body too large'}), 413
+    
+    @app.errorhandler(429)
+    def too_many_requests(error):
+        return jsonify({'error': 'Too Many Requests', 'message': 'Rate limit exceeded'}), 429
+
+def configure_logging(app):
+    if not app.debug and not app.testing:
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+        file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Pizza Delivery startup')

@@ -3,7 +3,7 @@ Database models for the Pizza Delivery API
 """
 from .database import db
 from datetime import datetime, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import validates
 import re
@@ -35,16 +35,22 @@ class Pizza(db.Model):
             raise ValueError('Pizza name cannot be empty')
         if len(name.strip()) > 100:
             raise ValueError('Pizza name cannot exceed 100 characters')
+        # Sanitize input
         return name.strip()
     
     @validates('price')
     def validate_price(self, key, price):
         """Validate pizza price"""
-        if price <= 0:
-            raise ValueError('Pizza price must be positive')
-        if price > 1000:
-            raise ValueError('Pizza price cannot exceed $1000')
-        return price
+        try:
+            if isinstance(price, str):
+                price = Decimal(price)
+            if price <= 0:
+                raise ValueError('Pizza price must be positive')
+            if price > 1000:
+                raise ValueError('Pizza price cannot exceed $1000')
+            return price
+        except (InvalidOperation, ValueError) as e:
+            raise ValueError(f'Invalid price format: {e}')
     
     @validates('ingredients')
     def validate_ingredients(self, key, ingredients):
@@ -53,7 +59,18 @@ class Pizza(db.Model):
             raise ValueError('Pizza ingredients cannot be empty')
         if len(ingredients.strip()) > 500:
             raise ValueError('Pizza ingredients cannot exceed 500 characters')
+        # Sanitize input
         return ingredients.strip()
+    
+    @validates('image')
+    def validate_image(self, key, image):
+        """Validate image path"""
+        if not image or not image.strip():
+            raise ValueError('Image path cannot be empty')
+        # Basic path validation
+        if '..' in image or image.startswith('/'):
+            raise ValueError('Invalid image path')
+        return image.strip()
     
     def to_dict(self):
         """Convert pizza to dictionary"""
