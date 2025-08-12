@@ -12,3 +12,14 @@ class OrderItemFactory(factory.alchemy.SQLAlchemyModelFactory):
     quantity = 1
     order_id = None  # Will be set when attached to an Order
     pizza_id = factory.SelfAttribute('pizza.id')
+
+    @factory.post_generation
+    def update_order_total(self, create, extracted, **kwargs):
+        """Update the order's total price after creating the order item"""
+        if create and self.order_id:
+            # Get the order and update its total price
+            from app.models import Orders
+            order = db.session.get(Orders, self.order_id)
+            if order:
+                order.update_total_price()
+                db.session.commit()
