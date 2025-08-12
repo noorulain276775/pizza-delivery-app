@@ -197,7 +197,7 @@ class PizzaAIService:
         self.enhanced_knowledge = {
             "pepperoni": {
                 "description": "Spicy pepperoni slices with melted mozzarella cheese on our signature crust",
-                "price": "$14.99",
+                "price": "14.99",
                 "toppings": "Pepperoni, mozzarella cheese",
                 "popularity": "Our most popular pizza",
                 "spice_level": "Medium spicy",
@@ -205,7 +205,7 @@ class PizzaAIService:
             },
             "margherita": {
                 "description": "Classic tomato sauce with fresh mozzarella cheese and basil on traditional crust",
-                "price": "$12.99",
+                "price": "12.99",
                 "toppings": "Tomato sauce, mozzarella, basil",
                 "popularity": "Traditional favorite",
                 "spice_level": "Mild",
@@ -213,7 +213,7 @@ class PizzaAIService:
             },
             "vegetarian": {
                 "description": "Fresh vegetables including bell peppers, mushrooms, onions, and olives with mozzarella",
-                "price": "$13.99",
+                "price": "13.99",
                 "toppings": "Bell peppers, mushrooms, onions, olives, mozzarella",
                 "popularity": "Healthy choice",
                 "spice_level": "Mild",
@@ -222,18 +222,18 @@ class PizzaAIService:
             "delivery": {
                 "standard": "30-45 minutes",
                 "express": "20-30 minutes (additional $3)",
-                "free_threshold": "$25",
+                "free_threshold": "25",
                 "areas": "All local areas within 10 miles",
                 "tracking": "Real-time order tracking available"
             },
             "toppings": {
-                "extra_cheese": "$1.99",
-                "mushrooms": "$1.99",
-                "bell_peppers": "$1.99",
-                "onions": "$1.99",
-                "olives": "$1.99",
-                "pepperoni": "$2.99",
-                "sausage": "$2.99"
+                "extra_cheese": "1.99",
+                "mushrooms": "1.99",
+                "bell_peppers": "1.99",
+                "onions": "1.99",
+                "olives": "1.99",
+                "pepperoni": "2.99",
+                "sausage": "2.99"
             }
         }
     
@@ -392,7 +392,7 @@ class PizzaAIService:
             elif "margherita" in user_message_lower:
                 return "Our Margherita Pizza is a classic choice! It's made with fresh tomato sauce, mozzarella cheese, and basil on our traditional crust. At $12.99, it's our most affordable option and perfect for those who love traditional Italian flavors."
             elif "vegetarian" in user_message_lower:
-                return "Our Vegetarian Pizza is loaded with fresh vegetables including bell peppers, mushrooms, onions, and olives, topped with mozzarella cheese. Priced at $13.99, it's a healthy and delicious choice for everyone!"
+                return "Our Vegetarian Pizza is loaded with fresh vegetables including bell peppers, mushrooms, onions, and olives with mozzarella. Priced at $13.99, it's a healthy and delicious choice for everyone!"
             else:
                 menu_info = "\n\nHere's our complete menu:\n" + "\n".join(self.pizza_knowledge["menu"])
                 return ai_response + menu_info + "\n\nWhich pizza interests you most? I can tell you more about any specific one!"
@@ -449,18 +449,42 @@ class PizzaAIService:
                         context_keywords.append("price")
                     elif "topping" in content_lower:
                         context_keywords.append("toppings")
+                    elif "menu" in content_lower or "what" in content_lower:
+                        context_keywords.append("menu")
             
             # Handle follow-up questions based on context with enhanced knowledge
             if "pepperoni" in context_keywords:
-                if any(word in user_message_lower for word in ["yes", "tell me", "about", "details", "what is"]):
+                if any(word in user_message_lower for word in ["yes", "tell me", "about", "details", "what is", "want", "that one", "order"]):
                     pizza_info = self.enhanced_knowledge["pepperoni"]
-                    return f"Great choice! Our Pepperoni Pizza is {pizza_info['description']}. It's {pizza_info['popularity']} and costs {pizza_info['price']}. The {pizza_info['spice_level']} flavor comes from our premium pepperoni slices. Would you like to know about delivery options or add extra toppings?"
+                    return f"Great choice! Our Pepperoni Pizza is {pizza_info['description']}. It's {pizza_info['popularity']} and costs ${pizza_info['price']}. The {pizza_info['spice_level']} flavor comes from our premium pepperoni slices. Would you like to know about delivery options or add extra toppings?"
                 
                 elif any(word in user_message_lower for word in ["price", "cost", "how much"]):
-                    return f"Our Pepperoni Pizza is {self.enhanced_knowledge['pepperoni']['price']} - it's our premium meat pizza and worth every penny! We also offer free delivery on orders over ${self.enhanced_knowledge['delivery']['free_threshold']}."
+                    return f"Our Pepperoni Pizza is ${self.enhanced_knowledge['pepperoni']['price']} - it's our premium meat pizza and worth every penny! We also offer free delivery on orders over ${self.enhanced_knowledge['delivery']['free_threshold']}."
                 
                 elif any(word in user_message_lower for word in ["topping", "extra", "add"]):
                     return f"You can customize your Pepperoni Pizza with extra toppings! Popular additions include extra cheese (${self.enhanced_knowledge['toppings']['extra_cheese']}), mushrooms (${self.enhanced_knowledge['toppings']['mushrooms']}), or even more pepperoni (${self.enhanced_knowledge['toppings']['pepperoni']}). What would you like to add?"
+            
+            elif "margherita" in context_keywords:
+                if any(word in user_message_lower for word in ["yes", "tell me", "about", "details", "what is", "want", "that one", "order"]):
+                    pizza_info = self.enhanced_knowledge["margherita"]
+                    return f"Excellent choice! Our Margherita Pizza is {pizza_info['description']}. It's {pizza_info['popularity']} and costs ${pizza_info['price']}. The {pizza_info['spice_level']} flavor is perfect for those who love traditional Italian taste. Would you like to know about delivery options or add extra toppings?"
+                
+                elif any(word in user_message_lower for word in ["price", "cost", "how much"]):
+                    return f"Our Margherita Pizza is ${self.enhanced_knowledge['margherita']['price']} - it's our most affordable option and perfect for budget-conscious customers. Plus, free delivery on orders over ${self.enhanced_knowledge['delivery']['free_threshold']}!"
+                
+                elif any(word in user_message_lower for word in ["topping", "extra", "add"]):
+                    return f"You can customize your Margherita Pizza with extra toppings! Popular additions include extra cheese (${self.enhanced_knowledge['toppings']['extra_cheese']}), mushrooms (${self.enhanced_knowledge['toppings']['mushrooms']}), or even pepperoni (${self.enhanced_knowledge['toppings']['pepperoni']}). What would you like to add?"
+            
+            elif "vegetarian" in context_keywords:
+                if any(word in user_message_lower for word in ["yes", "tell me", "about", "details", "what is", "want", "that one", "order"]):
+                    pizza_info = self.enhanced_knowledge["vegetarian"]
+                    return f"Healthy choice! Our Vegetarian Pizza is {pizza_info['description']}. It's {pizza_info['popularity']} and costs ${pizza_info['price']}. The {pizza_info['spice_level']} flavor is perfect for everyone. Would you like to know about delivery options or add extra toppings?"
+                
+                elif any(word in user_message_lower for word in ["price", "cost", "how much"]):
+                    return f"Our Vegetarian Pizza is ${self.enhanced_knowledge['vegetarian']['price']} - great value for a pizza loaded with fresh vegetables. And remember, free delivery on orders over ${self.enhanced_knowledge['delivery']['free_threshold']}!"
+                
+                elif any(word in user_message_lower for word in ["topping", "extra", "add"]):
+                    return f"You can customize your Vegetarian Pizza with extra toppings! Popular additions include extra cheese (${self.enhanced_knowledge['toppings']['extra_cheese']}), mushrooms (${self.enhanced_knowledge['toppings']['mushrooms']}), or even pepperoni (${self.enhanced_knowledge['toppings']['pepperoni']}). What would you like to add?"
             
             elif "delivery" in context_keywords:
                 if any(word in user_message_lower for word in ["what about", "toppings", "extra", "add"]):
@@ -478,6 +502,19 @@ class PizzaAIService:
                 if any(word in user_message_lower for word in ["what", "available", "options"]):
                     toppings_list = [f"{topping} ({price})" for topping, price in self.enhanced_knowledge["toppings"].items()]
                     return f"We offer a variety of delicious toppings: {', '.join(toppings_list)}. Each topping is added to your pizza for extra flavor and customization. What would you like to add to make your pizza perfect?"
+            
+            elif "menu" in context_keywords:
+                if any(word in user_message_lower for word in ["yes", "tell me", "about", "details", "what is", "want", "that one", "order", "pepperoni", "margherita", "vegetarian"]):
+                    # User is asking about a specific pizza after seeing the menu
+                    if "pepperoni" in user_message_lower:
+                        pizza_info = self.enhanced_knowledge["pepperoni"]
+                        return f"Great choice! Our Pepperoni Pizza is {pizza_info['description']}. It's {pizza_info['popularity']} and costs {pizza_info['price']}. The {pizza_info['spice_level']} flavor comes from our premium pepperoni slices. Would you like to know about delivery options or add extra toppings?"
+                    elif "margherita" in user_message_lower:
+                        pizza_info = self.enhanced_knowledge["margherita"]
+                        return f"Excellent choice! Our Margherita Pizza is {pizza_info['description']}. It's {pizza_info['popularity']} and costs {pizza_info['price']}. The {pizza_info['spice_level']} flavor is perfect for those who love traditional Italian taste. Would you like to know about delivery options or add extra toppings?"
+                    elif "vegetarian" in user_message_lower:
+                        pizza_info = self.enhanced_knowledge["vegetarian"]
+                        return f"Healthy choice! Our Vegetarian Pizza is {pizza_info['description']}. It's {pizza_info['popularity']} and costs {pizza_info['price']}. The {pizza_info['spice_level']} flavor is perfect for everyone. Would you like to know about delivery options or add extra toppings?"
         
         # Fall back to regular rule-based responses if no context found
         return self._generate_rule_based_response(user_message)
@@ -502,8 +539,12 @@ class PizzaAIService:
         elif any(word in user_message_lower for word in ["delivery", "time", "how long", "fast", "when", "deliver"]):
             return "We offer fast delivery:\n" + "\n".join(self.pizza_knowledge["delivery"]) + "\n\nWhere would you like your pizza delivered? I can help you estimate the exact delivery time for your area!"
         
+        # Order status and tracking
+        elif any(word in user_message_lower for word in ["status", "track", "where", "when", "order status", "tracking"]):
+            return "Great question! We provide real-time order tracking so you know exactly when your pizza will arrive. Once you place an order, you'll get a tracking link to monitor your delivery. Would you like to place an order now?"
+        
         # Order queries
-        elif any(word in user_message_lower for word in ["order", "buy", "purchase", "get", "place order", "want to order"]):
+        elif any(word in user_message_lower for word in ["order", "buy", "purchase", "get", "place order", "want to order", "ready to order"]):
             return "Excellent choice! 🎉 To place your order, you can use our website or mobile app. You can select your pizzas, add extra toppings, choose delivery options, and we'll get it to you fast! What would you like to order today?"
         
         # Payment queries
@@ -517,6 +558,10 @@ class PizzaAIService:
         # Toppings and customization
         elif any(word in user_message_lower for word in ["topping", "extra", "customize", "add", "more"]):
             return "Great question! We offer a variety of delicious toppings including extra cheese, mushrooms, bell peppers, onions, olives, and more! Each topping is just $1.99 extra. What would you like to add to make your pizza perfect?"
+        
+        # Special offers and deals
+        elif any(word in user_message_lower for word in ["deal", "offer", "special", "discount", "promotion"]):
+            return "We have great deals! 🎉 Free delivery on orders over $25, and we often run special promotions. Our current special is 10% off when you order 2 or more pizzas! What would you like to order?"
         
         # Default response
         else:
