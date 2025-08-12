@@ -37,6 +37,15 @@ def create_app(config_name=None):
     # Configure CORS
     CORS(app, origins=app.config.get('CORS_ORIGINS', ['http://localhost:3000']))
     
+    # Security headers
+    @app.after_request
+    def add_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
+    
     # Configure logging
     if not app.debug and not app.testing:
         configure_logging(app)
@@ -53,6 +62,12 @@ def create_app(config_name=None):
     def health_check():
         """Health check endpoint for monitoring"""
         return {'status': 'healthy', 'service': 'pizza-delivery-api'}, 200
+    
+    # Serve static files
+    @app.route('/static/<path:filename>')
+    def static_files(filename):
+        """Serve static files from the static directory"""
+        return app.send_static_file(filename)
     
     return app
 
