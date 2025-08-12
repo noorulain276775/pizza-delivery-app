@@ -94,37 +94,6 @@
   font-family: 'Inter', sans-serif;
 }
 
-.chatbot-status {
-  font-size: 12px;
-  opacity: 0.9;
-  font-weight: 400;
-  display: block;
-  margin-top: 2px;
-}
-
-.chatbot-status.ai-available {
-  color: #4ade80;
-  font-weight: 500;
-}
-
-.chatbot-status.ai-fallback {
-  color: #fbbf24;
-  font-weight: 500;
-}
-
-.chatbot-status.ai-checking {
-  color: #60a5fa;
-  font-weight: 500;
-}
-
-.fallback-notice {
-  font-size: 10px;
-  opacity: 0.7;
-  font-style: italic;
-  display: block;
-  margin-top: 2px;
-}
-
 .chatbot-controls {
   display: flex;
   gap: 8px;
