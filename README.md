@@ -423,24 +423,6 @@ curl http://127.0.0.1:5000/api/chat/stats
 - **Microservices**: Scalable architecture evolution
 - **Kubernetes**: Container orchestration for production
 
-## Contributing
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'feat: add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Contribution Guidelines
-- Follow established code patterns and architecture
-- Add comprehensive tests for new functionality
-- Update documentation for API changes
-- Ensure all tests pass before submitting
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## Support
 
 ### Documentation
@@ -453,11 +435,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **React Documentation**: https://reactjs.org/docs/
 - **Hugging Face**: https://huggingface.co/docs/transformers/
 - **PyTorch Tutorials**: https://pytorch.org/tutorials/
-
-### Community
-- **GitHub Issues**: Report bugs and request features
-- **Stack Overflow**: Search for common solutions
-- **Discord/Slack**: Join developer communities
 
 ---
 
